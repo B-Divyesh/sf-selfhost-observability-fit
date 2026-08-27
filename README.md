@@ -80,6 +80,10 @@ npm run build:site   # writes dist/site/index.html
 
 `npm run build` is an alias for the factory build and produces the same `dist/site` output.
 
+## Deploy
+
+Run `npm ci && npm run build:site`, then publish **`dist/site` as the static root**. Its `index.html` is at that root. `staticwebapp.config.json` ships security headers, SPA fallback rules, immutable caching for hashed assets, and a no-cache policy for the service worker. Deployment infrastructure, DNS, and billing stay outside this repository.
+
 ## Develop the CLI
 
 ```sh
