@@ -1,0 +1,30 @@
+{
+  "slug": "selfhost-observability-fit",
+  "title": "Observability Fit Check",
+  "territory": "devtools-data",
+  "user": "A solo operator or small platform team choosing a self-hosted observability stack who needs to test resource and retention fit before committing production telemetry.",
+  "evidence": [
+    {
+      "url": "https://hn.algolia.com/api/v1/items/46354749",
+      "date": "2025-12-22",
+      "quote_or_summary": "Ask HN explicitly asks which self-hosted observability tools people use."
+    },
+    {
+      "url": "https://github.com/kirodotdev/Kiro/issues/6319",
+      "date": "2026-03-09",
+      "quote_or_summary": "Demand for native telemetry export shows observability scope is expanding to new developer workflows."
+    }
+  ],
+  "recurrence": "A direct self-hosting selection request plus new OTLP-export demand; wrong sizing creates surprise cost or dropped telemetry.",
+  "current_workaround": "Read comparison blogs, deploy several stacks, and guess from VM recommendations.",
+  "incumbents_and_gap": "Grafana, SigNoz, OpenObserve, and Highlight each offer a stack, not a neutral workload replay/sizing check across them.",
+  "smallest_useful_product": "CLI that ingests a bounded OTLP sample, estimates cardinality/storage/query load, and emits comparable local compose profiles and retention budgets. Non-goals: hosted telemetry or a benchmark leaderboard.",
+  "success_measure": "Users can select a viable stack/profile from a sample in under 20 minutes and measured disk use lands within 25% of the estimate after one week.",
+  "artifact_class": "cli",
+  "monetization": "free — transparent recommendations are more credible as an open utility.",
+  "constraints": "Use synthetic or redacted samples; no vendor-sponsored rankings; clearly label heuristic estimates.",
+  "est_build_effort": "M",
+  "why_distinct": "It is a neutral fit and capacity test, rather than a competing observability backend.",
+  "confidence": 3,
+  "state": "RESEARCHED"
+}
