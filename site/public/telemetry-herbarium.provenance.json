@@ -1,0 +1,13 @@
+{
+  "created": "2026-08-27",
+  "generator": "/opt/fleet/lib/gen-image.sh",
+  "deployment": "factory-image",
+  "source_size": "1024x1024",
+  "quality": "high",
+  "shipped_asset": "telemetry-herbarium.webp",
+  "shipped_dimensions": "900x900",
+  "shipped_bytes": 92314,
+  "conversion": "ImageMagick WebP quality 76, metadata stripped",
+  "prompt": "Use case: scientific-educational. Asset type: landing page hero illustration. Botanical field guide plate on warm uncoated paper: one imaginary telemetry plant growing from a small server rack root system; three distinct branches represented only through forms—rounded trace seedpods, tiny log leaves, circular metric berries. Fine engraved ink linework with restrained moss green and muted ochre watercolor washes, subtle paper grain, scientific specimen composition, centered subject with breathing room. No lettering, no numbers, no labels, no logos, no user interface, no border, no watermark.",
+  "license": "Original project asset distributed under the repository MIT license"
+}

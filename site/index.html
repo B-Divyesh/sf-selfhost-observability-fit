@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3eedc" />
+    <meta name="description" content="Estimate self-hosted observability storage, cardinality, and resource fit from a local OTLP sample." />
+    <title>Observability Fit Check — size before you self-host</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="masthead">
+      <a class="wordmark" href="#top" aria-label="Observability Fit Check home">
+        <svg aria-hidden="true" viewBox="0 0 32 32"><path d="M16 28V8m0 8c-6 0-9-3-10-8 6-1 9 2 10 8Zm0 5c5 0 8-3 9-8-5-1-8 2-9 8Z"/></svg>
+        <span>Observability<br /><em>Fit Check</em></span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#specimen">Try a sample</a>
+        <a href="#field-notes">Method</a>
+        <a href="#install">Install CLI</a>
+      </nav>
+      <a class="header-command" href="#install"><span aria-hidden="true">$</span> cargo install</a>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span>Field note 01</span> · OTLP capacity</p>
+          <h1 id="hero-title">Know what your telemetry needs <i>before</i> it takes root.</h1>
+          <p class="lede">Inspect a redacted OTLP sample. Get cardinality, retention storage, and honest resource envelopes for four self-hosted stacks—without uploading a byte.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#specimen">Inspect a sample <span aria-hidden="true">↓</span></a>
+            <a class="text-link" href="#install">Or use the CLI <span aria-hidden="true">→</span></a>
+          </div>
+          <dl class="trust-strip" aria-label="Product principles">
+            <div><dt>01</dt><dd>Local only</dd></div>
+            <div><dt>02</dt><dd>Vendor neutral</dd></div>
+            <div><dt>03</dt><dd>Heuristics exposed</dd></div>
+          </dl>
+        </div>
+        <figure class="specimen-plate">
+          <span class="plate-number" aria-hidden="true">PLATE<br />OT–01</span>
+          <img src="/telemetry-herbarium.webp" width="900" height="900" fetchpriority="high" alt="Engraved botanical specimen with trace pods, log leaves, and metric berries growing from a server rack" />
+          <figcaption><span>Telemetry trifolia</span><br />synthetic specimen · three signal habitat</figcaption>
+        </figure>
+      </section>
+
+      <section class="demo" id="specimen" aria-labelledby="demo-title">
+        <div class="section-heading">
+          <p class="eyebrow">Live specimen tray</p>
+          <h2 id="demo-title">Measure a sample in your browser</h2>
+          <p>Your file is read in this tab and never transmitted. For production decisions, repeat the same check with the CLI and a 10+ minute sample.</p>
+        </div>
+
+        <div id="offline-note" class="offline-note" role="status" hidden>
+          <strong>Offline—and still usable.</strong> The analyzer runs locally. Install the CLI later when you reconnect.
+        </div>
+
+        <form id="analyzer-form" class="analyzer" novalidate>
+          <div class="tray-column">
+            <label id="drop-label" class="drop-zone" for="sample-file">
+              <svg aria-hidden="true" viewBox="0 0 48 48"><path d="M24 37V12m0 0-8 8m8-8 8 8M10 31v8h28v-8"/></svg>
+              <strong id="file-prompt">Choose an OTLP JSON sample</strong>
+              <span>or drop it here · JSON / NDJSON · 5 MB max</span>
+              <input id="sample-file" name="sample" type="file" accept=".json,.ndjson,application/json,application/x-ndjson" aria-describedby="file-help form-status" />
+            </label>
+            <p id="file-help" class="safety-note"><span aria-hidden="true">✣</span> Use synthetic or redacted data. Attribute values may contain secrets or personal data.</p>
+            <button id="synthetic-button" class="button secondary" type="button">Load synthetic specimen</button>
+          </div>
+
+          <fieldset class="controls">
+            <legend>Growing conditions</legend>
+            <label for="retention">Retention <output id="retention-output" for="retention">14 days</output></label>
+            <input id="retention" name="retention" type="range" min="1" max="90" value="14" />
+            <div class="range-labels" aria-hidden="true"><span>1 day</span><span>90 days</span></div>
+
+            <label for="headroom">Capacity headroom</label>
+            <div class="number-input"><input id="headroom" name="headroom" type="number" min="0" max="200" value="30" inputmode="numeric" /><span>%</span></div>
+            <button id="analyze-button" class="button primary" type="submit">Inspect sample <span aria-hidden="true">→</span></button>
+          </fieldset>
+        </form>
+        <p id="form-status" class="form-status" aria-live="polite">No specimen selected yet.</p>
+
+        <section id="results" class="results" aria-labelledby="results-title" hidden>
+          <div class="result-heading">
+            <div><p class="eyebrow">Specimen reading · heuristic</p><h2 id="results-title">Your workload habitat</h2></div>
+            <button id="download-button" class="button secondary" type="button">Download JSON</button>
+          </div>
+          <dl class="measurements">
+            <div><dt>Records</dt><dd id="result-records">—</dd></div>
+            <div><dt>Observed window</dt><dd id="result-window">—</dd></div>
+            <div><dt>Raw ingest / day</dt><dd id="result-ingest">—</dd></div>
+            <div><dt>Active label sets</dt><dd id="result-series">—</dd></div>
+          </dl>
+          <div class="signal-mix" aria-label="Signal mix">
+            <p><span>Signal mix</span><span id="signal-summary">—</span></p>
+            <div class="mix-bar" role="img" aria-label="Signal mix bar"><i id="trace-bar"></i><i id="log-bar"></i><i id="metric-bar"></i></div>
+            <div class="legend"><span class="trace">Trace spans</span><span class="log">Log records</span><span class="metric">Metric points</span></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <caption>Comparable single-host planning envelopes. Not a benchmark ranking.</caption>
+              <thead><tr><th scope="col">Stack</th><th scope="col">Sample fit</th><th scope="col">Retained disk</th><th scope="col">vCPU</th><th scope="col">Memory</th></tr></thead>
+              <tbody id="profile-body"></tbody>
+            </table>
+          </div>
+          <p id="result-warning" class="result-warning"></p>
+        </section>
+      </section>
+
+      <section class="field-notes" id="field-notes" aria-labelledby="method-title">
+        <div class="section-heading narrow">
+          <p class="eyebrow">How the field guide reads</p>
+          <h2 id="method-title">Evidence first. Assumptions in the margin.</h2>
+        </div>
+        <ol class="method-list">
+          <li><span>01</span><div><h3>Observe the sample</h3><p>Count spans, log records, metric points, timestamps, attribute values, and label-set combinations.</p></div></li>
+          <li><span>02</span><div><h3>Project the bed</h3><p>Scale observed bytes across a day, then apply published-as-assumption indexing factors, retention, growth, replicas, and headroom.</p></div></li>
+          <li><span>03</span><div><h3>Replay the season</h3><p>Run the candidate for seven days with redacted data. A disk variance above 25% means the estimate needs calibration.</p></div></li>
+        </ol>
+        <aside class="formula" aria-label="Storage estimate formula">
+          <span>retained storage</span>
+          <code>sample byte rate × index factor × growing days × replicas × headroom</code>
+          <small>+ each stack’s minimum operating floor</small>
+        </aside>
+      </section>
+
+      <section class="profiles" aria-labelledby="profiles-title">
+        <div class="section-heading"><p class="eyebrow">Four habitats, no podium</p><h2 id="profiles-title">Compare operating shapes, not logos.</h2></div>
+        <div class="profile-notes">
+          <article><span class="latin">generalist habitat</span><h3>Grafana LGTM</h3><p>Broad three-signal coverage in one local distribution. Useful when traces, logs, and metrics all matter.</p></article>
+          <article><span class="latin">application habitat</span><h3>Highlight</h3><p>Validate when trace-led application context and session workflows justify a larger minimum footprint.</p></article>
+          <article><span class="latin">compact habitat</span><h3>OpenObserve</h3><p>A useful first replay target for log-heavy workloads and teams optimizing a small single-node shape.</p></article>
+          <article><span class="latin">trace habitat</span><h3>SigNoz</h3><p>A natural candidate for trace-heavy application performance work; plan for its multi-service floor.</p></article>
+        </div>
+      </section>
+
+      <section class="install" id="install" aria-labelledby="install-title">
+        <div><p class="eyebrow">Take the field kit</p><h2 id="install-title">Run the full check locally.</h2><p>The Rust CLI accepts OTLP JSON or NDJSON, reads stdin, emits stable JSON for scripts, and writes comparable capacity plans and Compose resource overlays.</p></div>
+        <div class="command-block">
+          <div><span>Build from source</span><button class="copy-button" type="button" data-copy="cargo install --git https://github.com/B-Divyesh/sf-selfhost-observability-fit.git" aria-label="Copy install command">Copy</button></div>
+          <code>cargo install --git https://github.com/B-Divyesh/<wbr>sf-selfhost-observability-fit.git</code>
+          <div><span>Inspect a sample</span><button class="copy-button" type="button" data-copy="obsfit sample.json --retention-days 14 --emit-dir ./fit-plan" aria-label="Copy usage command">Copy</button></div>
+          <code>obsfit sample.json --retention-days 14<br />&nbsp;&nbsp;--emit-dir ./fit-plan</code>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="#top"><svg aria-hidden="true" viewBox="0 0 32 32"><path d="M16 28V8m0 8c-6 0-9-3-10-8 6-1 9 2 10 8Zm0 5c5 0 8-3 9-8-5-1-8 2-9 8Z"/></svg><span>Observability<br /><em>Fit Check</em></span></a>
+      <p>Open source · MIT · no telemetry<br />Heuristic estimates, clearly labelled.</p>
+      <div><a href="https://github.com/B-Divyesh/sf-selfhost-observability-fit">Source</a><a href="mailto:hello@sociobot.in">Contact</a></div>
+    </footer>
+  </body>
+</html>

@@ -4,4 +4,6 @@ target/
 .env
 *.log
 graphify-out/
+playwright-report/
+test-results/
 .DS_Store
