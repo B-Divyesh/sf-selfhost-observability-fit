@@ -1,44 +1,97 @@
-# Verification handoff — FAIL
+# Repair handoff — PASS
 
-**Work order:** `selfhost-observability-fit-verify-2`
-**Candidate:** `3e5f51f2a116a0c1175ade3a7eebe83f9473268e`
-**Live URL:** <https://selfhost-observability-fit.sociobot.in/>
+**Work order:** `selfhost-observability-fit-repair-2`
+**Verifier report:** commit `682fcebf4e73fa2d97a01dd71a02b220c607e936` / `.factory/verification-2.md`
+**Candidate repaired:** `3e5f51f2a116a0c1175ade3a7eebe83f9473268e`
+**Deployment:** <https://selfhost-observability-fit.sociobot.in/> (Azure Static Web App `sf-selfhost-observability-fit`, production)
 **Verified:** 2026-08-28 UTC
 
-## Status
+## Repair completed
 
-**FAIL — release blocked.** The live deployment is byte-identical to the
-fresh candidate production build, and all CLI, package, light-mode, privacy,
-PWA, security-header, caching, and performance checks passed. However, in
-system dark mode axe reports a serious color-contrast failure for the profile
-section heading and four stack headings on both desktop and 390 px mobile.
-They render `#17211b` on `#101712` (1.1:1). This fails the stated dark-theme
-and accessibility acceptance requirements.
+The verifier's release blocker was reproduced in system dark mode: the profile
+section used `var(--paper)` as its foreground; that token becomes `#17211B`
+in dark mode, nearly matching the section's `#101712` background. The profile
+section now explicitly uses the dark `var(--ink)` foreground (`#F1EBD9`) while
+retaining its intentionally darker habitat background. This restores readable
+contrast for “Compare operating shapes, not logos.” and all four stack names.
+No researched scope, CLI behavior, deployment class, or previously passing
+light-theme behavior changed.
 
-Full evidence, commands, exact successful results, and retest criteria are
-in `.factory/verification-2.md`.
+## Regression coverage
 
-## Verification summary
+- The rendered-result Playwright axe test now explicitly emulates both
+  `light` and `dark` color schemes. Because the suite runs in desktop Chromium
+  and the required 390 × 844 mobile project, it audits all four viewport/theme
+  combinations after the synthetic result renders.
+- Each audit fails on any serious or critical axe violation. The new dark
+  cases catch the exact profile-heading regression from the verifier report.
+- Existing regression coverage for the first verifier's maximum-capacity
+  rejection, light metric contrast, and 44 px mobile hit targets remains in
+  place and passed.
 
-- `npm ci` found 0 vulnerabilities; `npm run typecheck`, `cargo fmt --check`,
-  `cargo clippy --all-targets -- -D warnings`, `npm test`, `npm run build`,
-  and `cargo package --allow-dirty` passed.
-- The packed crate installed into a clean consumer root and its installed
-  binary processed NDJSON stdin correctly.
-- The normal CLI path produced four finite, neutral profiles and all plan
-  files; valid lower boundary passed; invalid/unsafe inputs and the accepted
-  maximum capacity combination returned documented non-zero exits.
-- Live root/JS/CSS/hero/service-worker SHA-256 values match `dist/site`.
-  CSP, HSTS, nosniff, no-referrer, restrictive Permissions-Policy, immutable
-  hashed-asset caching, and no-cache service-worker policy are present.
-- Light-mode desktop and 390 px complete flows passed keyboard, focus,
-  error/recovery, no-console-error, no-outbound-request, storage/cookie,
-  touch-target, reduced-motion, axe, and offline PWA reload checks.
-- Lighthouse mobile: 100 performance, 100 accessibility, 100 best practices,
-  100 SEO; FCP 0.9 s, LCP 1.4 s, TBT 30 ms, CLS 0.
+## Verification evidence
 
-## Required next step
+Clean-install and local quality gates passed:
 
-Repair dark `.profiles` text contrast, add dark-mode axe coverage, redeploy,
-and re-run the verification report's retest criteria. No product code was
-changed by this verification.
+```sh
+npm ci                                      # 0 vulnerabilities
+npm run typecheck                           # pass
+cargo fmt --check                           # pass
+cargo clippy --all-targets -- -D warnings   # pass
+npm test                                    # pass
+npm run build                               # pass; dist/site produced
+cargo package --allow-dirty                 # pass; package verification compiled
+```
+
+`npm test` passed 3 Vitest tests, 4 Rust unit tests, 5 Rust integration tests,
+1 doctest, and 9 Playwright tests; the desktop-only invocation skips the one
+390 px target-size test as intended. The browser suite covers keyboard empty
+state recovery, console errors, desktop and 390 px result flows, light/dark
+axe audits, and touch target sizing.
+
+The production build is within the static budget: JavaScript is 9.63 kB raw /
+4.03 kB gzip, CSS is 16.01 kB raw / 4.37 kB gzip, and the original hero WebP
+is 92.3 kB. A fresh `cargo install --path
+target/package/selfhost-observability-fit-0.1.0 --root <temp>` consumer install
+succeeded; its installed binary read two NDJSON records from stdin and emitted
+`obsfit.report.v1` with four profiles.
+
+Deployment used:
+
+```sh
+swa deploy dist/site --env production --app-name sf-selfhost-observability-fit \
+  --resource-group sociobot --swa-config-location dist/site
+```
+
+Live identity and safety checks passed after deployment:
+
+- SHA-256 values for `index.html`, `assets/index-Bb9Ko5gz.js`,
+  `assets/style-JbBA02Qn.css`, `telemetry-herbarium.webp`, and `sw.js` exactly
+  match `dist/site`.
+- A live Playwright audit at 1440 × 900 and 390 × 844 in both light and dark
+  modes found zero console/page errors, outbound requests, cookies,
+  local/session storage entries, and serious/critical axe violations. The
+  page has `lang=en`, one `<h1>`, one `<main>`, and the first Tab focuses the
+  visible skip link in every run.
+- The repaired dark profile foreground computes to `rgb(241, 235, 217)` on
+  `rgb(16, 23, 18)`. This is the verifier's failing section and is now
+  readable at both viewports.
+- A controlled 390 px page reloaded offline successfully from the versioned
+  service-worker cache with the expected title, one `<h1>`, and an active
+  controller.
+- Live response policy remains restrictive: self-only CSP for default,
+  script, style, and connect sources; `object-src 'none'`, `base-uri 'self'`,
+  `frame-ancestors 'none'`, HSTS, `nosniff`, `no-referrer`, and restrictive
+  Permissions-Policy. Hashed assets remain immutable for one year and `sw.js`
+  is no-cache.
+- Lighthouse 13.4.1 mobile against production: **100 performance / 100
+  accessibility / 100 best practices / 100 SEO**; FCP 1.0 s, LCP 1.4 s, TBT
+  0 ms, CLS 0.
+
+## Publish and next steps
+
+The artifact remains a Rust single-binary CLI with a Vite static documentation
+site. No registry publish was attempted; the ready-to-publish package was
+verified with `cargo package --allow-dirty`. There are no known release-blocking
+gaps. Continue using only synthetic or redacted telemetry and validate chosen
+profiles with the documented seven-day replay.

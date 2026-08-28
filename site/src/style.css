@@ -211,5 +211,5 @@ footer > div a { min-height: 44px; display: inline-flex; align-items: center; }
   :root { --paper: #17211b; --raised: #202c24; --ink: #f1ebd9; --muted: #b8c5b9; --moss: #9bc7a5; --fern: #7eac8a; --ochre: #e6b56e; --rust: #f09a8e; --rule: #526157; --trace: #9bc7a5; --log: #e6b56e; --metric: #a6aaa2; }
   .specimen-plate img { mix-blend-mode: normal; filter: brightness(.78) sepia(.1); }
   .button.primary { color: #142018; background: var(--moss); }.button.primary:hover { color: #142018; background: #c7ddcc; }
-  .profiles { background: #101712; }.header-command:hover, .button.secondary:hover { background: var(--ink); color: #17211b; }
+  .profiles { background: #101712; color: var(--ink); }.header-command:hover, .button.secondary:hover { background: var(--ink); color: #17211b; }
 }

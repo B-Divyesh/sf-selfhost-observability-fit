@@ -23,15 +23,18 @@ test("keyboard path and empty error are usable", async ({ page }) => {
   await expect(page.locator("#sample-file")).toBeFocused();
 });
 
-test("rendered results have no serious or critical accessibility violations", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: "Load synthetic specimen" }).click();
-  await page.getByRole("button", { name: /Inspect sample/ }).click();
-  await expect(page.locator(".signal-mix")).toBeVisible();
-  const results = await new AxeBuilder({ page }).analyze();
-  const severe = results.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""));
-  expect(severe).toEqual([]);
-});
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`rendered results have no serious or critical accessibility violations in ${colorScheme} mode`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto("/");
+    await page.getByRole("button", { name: "Load synthetic specimen" }).click();
+    await page.getByRole("button", { name: /Inspect sample/ }).click();
+    await expect(page.locator(".signal-mix")).toBeVisible();
+    const results = await new AxeBuilder({ page }).analyze();
+    const severe = results.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""));
+    expect(severe).toEqual([]);
+  });
+}
 
 test("mobile touch targets meet the 44px minimum", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile-390", "Touch-target sizing is checked at the required 390px viewport.");
