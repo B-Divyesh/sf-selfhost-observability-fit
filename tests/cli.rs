@@ -66,3 +66,24 @@ fn empty_and_non_otlp_samples_are_rejected() {
     assert!(analyze(b"  ", &AnalysisOptions::default()).is_err());
     assert!(analyze(br#"{"hello":"world"}"#, &AnalysisOptions::default()).is_err());
 }
+
+#[test]
+fn maximum_accepted_growth_options_reject_an_unrepresentable_capacity_plan() {
+    let output = Command::new(env!("CARGO_BIN_EXE_obsfit"))
+        .args([
+            "tests/fixtures/mixed-otlp.json",
+            "--retention-days",
+            "3650",
+            "--growth",
+            "500",
+            "--headroom",
+            "500",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unrepresentable capacity estimate"));
+    assert!(output.stdout.is_empty());
+}

@@ -1,4 +1,4 @@
-const CACHE = "obsfit-field-guide-v1";
+const CACHE = "obsfit-field-guide-v2";
 const SHELL = ["/", "/telemetry-herbarium.webp", "/favicon.svg"];
 
 self.addEventListener("install", (event) => {

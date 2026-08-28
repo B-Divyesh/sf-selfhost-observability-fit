@@ -153,7 +153,7 @@ pub(crate) fn analyze(input: &[u8], options: &AnalysisOptions) -> Result<Report,
         evidence.logs,
         evidence.metrics,
         options,
-    );
+    )?;
 
     Ok(Report {
         schema_version: "obsfit.report.v1".to_owned(),
@@ -345,7 +345,7 @@ fn build_profiles(
     logs: u64,
     metrics: u64,
     options: &AnalysisOptions,
-) -> Vec<FitProfile> {
+) -> Result<Vec<FitProfile>, FitError> {
     struct Stack {
         slug: &'static str,
         name: &'static str,
@@ -400,6 +400,9 @@ fn build_profiles(
     ];
     let grown_days = geometric_days(options.retention_days, options.growth_percent / 100.0);
     let headroom = 1.0 + options.headroom_percent / 100.0;
+    if !grown_days.is_finite() || !headroom.is_finite() {
+        return Err(unrepresentable_capacity_error());
+    }
     let scale = (records_second / 1_000.0).max(active_series as f64 / 50_000.0);
     let total = (traces + logs + metrics) as f64;
 
@@ -408,12 +411,20 @@ fn build_profiles(
         .map(|stack| {
             let daily = raw_gib_day * stack.factor;
             let retained = daily * grown_days * f64::from(stack.replicas) * headroom;
-            let volume = (retained + stack.floor_disk).ceil().max(1.0) as u64;
+            let required_volume = retained + stack.floor_disk;
+            if !daily.is_finite()
+                || !retained.is_finite()
+                || !required_volume.is_finite()
+                || required_volume >= u64::MAX as f64
+            {
+                return Err(unrepresentable_capacity_error());
+            }
+            let volume = required_volume.ceil().max(1.0) as u64;
             let vcpu = round_half(stack.floor_cpu + scale * 2.0);
             let memory = round_half(stack.floor_memory + scale * 4.0);
             let (fit, rationale) =
                 profile_fit(stack.slug, traces, logs, metrics, total, active_series);
-            FitProfile {
+            Ok(FitProfile {
                 slug: stack.slug.to_owned(),
                 stack: stack.name.to_owned(),
                 fit,
@@ -426,9 +437,16 @@ fn build_profiles(
                 vcpu,
                 memory_gib: memory,
                 upstream_compose_url: stack.url.to_owned(),
-            }
+            })
         })
         .collect()
+}
+
+fn unrepresentable_capacity_error() -> FitError {
+    FitError(
+        "retention, growth, and headroom produce an unrepresentable capacity estimate; reduce one of those values"
+            .to_owned(),
+    )
 }
 
 fn profile_fit(
@@ -516,5 +534,20 @@ mod tests {
     fn compact_otlp_values_are_readable() {
         let value = serde_json::json!({"stringValue": "api"});
         assert_eq!(compact_value(&value), "api");
+    }
+
+    #[test]
+    fn unrepresentable_growth_is_rejected_before_a_report_is_built() {
+        let options = AnalysisOptions {
+            retention_days: 3650,
+            growth_percent: 500.0,
+            headroom_percent: 500.0,
+        };
+        let error = analyze(
+            br#"{"resourceLogs":[{"scopeLogs":[{"logRecords":[{"timeUnixNano":"1000000000"}]}]}]}"#,
+            &options,
+        )
+        .unwrap_err();
+        assert!(error.0.contains("unrepresentable capacity estimate"));
     }
 }
