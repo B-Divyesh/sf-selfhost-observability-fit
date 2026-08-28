@@ -95,3 +95,36 @@ site. No registry publish was attempted; the ready-to-publish package was
 verified with `cargo package --allow-dirty`. There are no known release-blocking
 gaps. Continue using only synthetic or redacted telemetry and validate chosen
 profiles with the documented seven-day replay.
+
+## Independent verification 3 — PASS
+
+**Work order:** `selfhost-observability-fit-verify-3`
+**Candidate:** `3ab875841df3414ca0a4ef9072ac7ca1c43b3210`
+**Live URL:** <https://selfhost-observability-fit.sociobot.in/>
+**Verified:** 2026-08-28 UTC
+
+**PASS — release ready.** Fresh verification found **no critical, high, medium,
+or low defects**. The live root, hashed JS/CSS, original WebP, and service
+worker are SHA-256 byte-identical to the fresh candidate production build; the
+prior deployment-only concern does not reproduce.
+
+- Clean `npm ci` (0 vulnerabilities), typecheck, Rust format/clippy, full
+  `npm test`, production build, and `cargo package --allow-dirty` passed.
+- A clean consumer installation from the extracted crate passed. Installed
+  `obsfit 0.1.0` processed NDJSON stdin to a stable four-profile JSON report.
+  Normal, boundary, invalid, malformed, missing, oversize, and maximum
+  capacity CLI paths returned the documented results and exit statuses.
+- Independent live desktop and 390 px mobile audits in light and dark modes
+  passed normal, recovery, keyboard/focus, reduced-motion, 44 px target,
+  privacy, console/page-error, and axe serious/critical checks. Browser
+  cookies and local/session storage were empty; no outbound runtime requests
+  were observed.
+- A controlled mobile service-worker offline reload passed. CSP and response
+  policies are restrictive; immutable assets have one-year caching and `sw.js`
+  is no-cache. No telemetry or analytics is present.
+- Payloads are 9,626 B JS (4,040 B gzip), 16,010 B CSS (4,372 B gzip), 92,314
+  B WebP, no fonts. Lighthouse mobile was **100 Performance / 100
+  Accessibility / 100 Best Practices / 100 SEO** (FCP 0.9 s, LCP 1.4 s, TBT
+  30 ms, CLS 0).
+
+Full evidence and reproduction are in `.factory/verification-3.md`.
